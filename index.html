@@ -3,205 +3,426 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lumen: alerts, prompts and toasts</title>
+<title>Lumen · Demo</title>
 <style>
-  body{margin:0;background:#f3f4f8;color:#1c2333;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
-  body.dark{background:#0e1220;color:#e9edf5}
-  .wrap{max-width:720px;margin:0 auto;padding:48px 20px 80px}
-  h1{margin:0 0 4px;font-size:30px;letter-spacing:-.02em}
-  .lead{margin:0 0 32px;opacity:.7}
-  h2{margin:36px 0 12px;font-size:15px;font-weight:600}
-  button.demo{margin:0 8px 8px 0;padding:10px 16px;font:inherit;font-size:14px;font-weight:600;color:inherit;background:#fff;border:1px solid #d5d9e5;border-radius:10px;cursor:pointer}
-  body.dark button.demo{background:#171c2b;border-color:#2c3449}
-  button.demo:hover{border-color:#8d97b1}
-  button.demo:focus{outline:2px solid #2c7be5;outline-offset:2px}
-  pre{margin:24px 0 0;padding:14px 16px;min-height:3em;background:#fff;border:1px solid #d5d9e5;border-radius:10px;font:13px/1.5 Consolas,Menlo,monospace;white-space:pre-wrap;word-wrap:break-word}
-  body.dark pre{background:#171c2b;border-color:#2c3449}
+  :root {
+    --bg: #f5f6fa; --card: #fff; --text: #1c2333; --muted: #667089; --line: #e3e6ef;
+    --accent: #2c7be5; --code: #eef1f7;
+  }
+  /* Follows the OS by default; the theme toggle sets data-theme to override it */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #0e121c; --card: #161b29; --text: #e9edf5; --muted: #98a2b8; --line: #263049; --accent: #5b9bff; --code: #0f1320; }
+  }
+  :root[data-theme="dark"] { --bg: #0e121c; --card: #161b29; --text: #e9edf5; --muted: #98a2b8; --line: #263049; --accent: #5b9bff; --code: #0f1320; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  header { padding: 48px 20px 8px; text-align: center; }
+  header h1 { margin: 0 0 6px; font-size: 2rem; letter-spacing: -.02em; }
+  header p { margin: 0; color: var(--muted); }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 20px 64px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .card h2 { margin: 0 0 4px; font-size: 1.05rem; }
+  .card p { margin: 0 0 12px; font-size: .88rem; color: var(--muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  button.d { font: inherit; font-size: .88rem; font-weight: 600; padding: 8px 14px; border-radius: 9px; border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; }
+  button.d:hover { border-color: var(--accent); color: var(--accent); }
+  button.d:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wide { grid-column: 1 / -1; }
+  #log { margin: 0; padding: 12px; min-height: 90px; max-height: 220px; overflow: auto; background: var(--code); border-radius: 10px; font: 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-all; }
+  #log:empty:before { content: "Results from each dialog appear here…"; color: var(--muted); }
+  .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .head h2 { margin: 0; }
+  .link { font: inherit; font-size: .8rem; background: none; border: 0; color: var(--accent); cursor: pointer; }
 
   /* Example of restyling Lumen with customClass: a brutalist "brand" skin */
-  .brand-popup{border-radius:0!important;box-shadow:6px 6px 0 #111!important;border:2px solid #111;font-family:Georgia,"Times New Roman",serif!important;text-align:left!important;background:#fffbe6!important;color:#111!important}
-  .brand-popup .lm-title{font-size:1.5em;letter-spacing:0}
-  .brand-btn{border-radius:0!important;font-family:Georgia,serif!important;border:2px solid #111!important}
+  .brand-popup { border-radius: 0 !important; box-shadow: 6px 6px 0 #111 !important; border: 2px solid #111; font-family: Georgia, "Times New Roman", serif !important; text-align: left !important; background: #fffbe6 !important; color: #111 !important; }
+  .brand-popup .lm-title { font-size: 1.5em; letter-spacing: 0; }
+  .brand-btn { border-radius: 0 !important; font-family: Georgia, serif !important; border: 2px solid #111 !important; }
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<header>
   <h1>Lumen</h1>
-  <p class="lead">Dependency-free alerts, prompts and toasts. Plain ES5, so it runs on anything from IE11 up.</p>
+  <p>Dependency-free alerts, prompts and toasts. Plain ES5, so it runs on anything from IE11 up.</p>
+</header>
 
-  <h2>Icons</h2>
-  <button class="demo" id="b-success">Success</button>
-  <button class="demo" id="b-error">Error</button>
-  <button class="demo" id="b-warning">Warning</button>
-  <button class="demo" id="b-danger">Danger</button>
-  <button class="demo" id="b-info">Info</button>
-  <button class="demo" id="b-question">Question</button>
+<main>
+  <section class="card">
+    <h2>Alerts</h2>
+    <p>Icon shortcuts, same arguments as <code>fire()</code>.</p>
+    <div class="row">
+      <button class="d" data-demo="success">Success</button>
+      <button class="d" data-demo="error">Error</button>
+      <button class="d" data-demo="warning">Warning</button>
+      <button class="d" data-demo="danger">Danger</button>
+      <button class="d" data-demo="info">Info</button>
+      <button class="d" data-demo="question">Question</button>
+      <button class="d" data-demo="plain">Plain</button>
+    </div>
+  </section>
 
-  <h2>Decisions</h2>
-  <button class="demo" id="b-confirm">Confirm / cancel</button>
-  <button class="demo" id="b-three">Save, don't save, cancel</button>
-  <button class="demo" id="b-footer">Footer link</button>
+  <section class="card">
+    <h2>Confirm &amp; decisions</h2>
+    <p>Branch on <code>isConfirmed</code>, <code>isDenied</code> or <code>dismiss</code>.</p>
+    <div class="row">
+      <button class="d" data-demo="confirm">Default</button>
+      <button class="d" data-demo="confirmDanger">Danger + button text</button>
+      <button class="d" data-demo="confirmCustom">Custom labels</button>
+      <button class="d" data-demo="confirmFlow">Confirm → toast</button>
+      <button class="d" data-demo="three">Save / don't save / cancel</button>
+      <button class="d" data-demo="footer">Footer link</button>
+    </div>
+  </section>
 
-  <h2>Input</h2>
-  <button class="demo" id="b-prompt">Prompt with validation</button>
-  <button class="demo" id="b-select">Select</button>
-  <button class="demo" id="b-async">Async confirm (loader)</button>
-  <button class="demo" id="b-queue">Queue of 3 steps</button>
+  <section class="card">
+    <h2>Prompts &amp; inputs</h2>
+    <p>Validation messages show inline and keep the dialog open.</p>
+    <div class="row">
+      <button class="d" data-demo="prompt">Text</button>
+      <button class="d" data-demo="promptLabel">Label + maxlength</button>
+      <button class="d" data-demo="email">Email + validator</button>
+      <button class="d" data-demo="password">Password</button>
+      <button class="d" data-demo="select">Select</button>
+      <button class="d" data-demo="selectPh">Select + placeholder</button>
+      <button class="d" data-demo="textarea">Textarea</button>
+      <button class="d" data-demo="chain">Chained prompts</button>
+      <button class="d" data-demo="queue">Queue of 3 steps</button>
+    </div>
+  </section>
 
-  <h2>Dismissal</h2>
-  <button class="demo" id="b-closebtn">Default (× button, backdrop, Esc)</button>
-  <button class="demo" id="b-noclose">No × button</button>
-  <button class="demo" id="b-nobackdrop">Backdrop click disabled</button>
-  <button class="demo" id="b-locked">Fully locked</button>
-  <button class="demo" id="b-dynamic">Backdrop depends on a checkbox</button>
+  <section class="card">
+    <h2>Async</h2>
+    <p>Wait on a server call before the dialog closes.</p>
+    <div class="row">
+      <button class="d" data-demo="async">Async confirm (loader)</button>
+      <button class="d" data-demo="loading">Loading</button>
+    </div>
+  </section>
 
-  <h2>Toasts, timers, loading</h2>
-  <button class="demo" id="b-toast">Toast</button>
-  <button class="demo" id="b-toast2">Toast, bottom centre</button>
-  <button class="demo" id="b-toast3">Toast, title only (danger)</button>
-  <button class="demo" id="b-timer">Auto-close with progress bar</button>
-  <button class="demo" id="b-loading">Loading</button>
+  <section class="card">
+    <h2>Dismissal</h2>
+    <p>Control how a dialog can be closed.</p>
+    <div class="row">
+      <button class="d" data-demo="closeBtn">Default (×, backdrop, Esc)</button>
+      <button class="d" data-demo="noClose">No × button</button>
+      <button class="d" data-demo="noBackdrop">Backdrop click disabled</button>
+      <button class="d" data-demo="locked">Fully locked</button>
+      <button class="d" data-demo="dynamic">Backdrop depends on a checkbox</button>
+    </div>
+  </section>
 
-  <h2>Customising</h2>
-  <button class="demo" id="b-theme">Toggle dark theme</button>
-  <button class="demo" id="b-brand">Custom skin (customClass)</button>
-  <button class="demo" id="b-top">Top position, wide</button>
+  <section class="card">
+    <h2>Behaviour</h2>
+    <p>Timers, replacement, trusted HTML and position.</p>
+    <div class="row">
+      <button class="d" data-demo="timer">Auto-close (3s)</button>
+      <button class="d" data-demo="timerBar">Auto-close with progress bar</button>
+      <button class="d" data-demo="replace">Replaced after 1.5s</button>
+      <button class="d" data-demo="html">Trusted HTML</button>
+      <button class="d" data-demo="top">Top position, wide</button>
+    </div>
+  </section>
 
-  <pre id="out" aria-live="polite">Results appear here.</pre>
-</div>
+  <section class="card">
+    <h2>Toasts</h2>
+    <p>Click a toast to dismiss it. Default timer is 3 s.</p>
+    <div class="row">
+      <button class="d" data-demo="tSuccess">Success</button>
+      <button class="d" data-demo="tError">Error</button>
+      <button class="d" data-demo="tWarning">Warning</button>
+      <button class="d" data-demo="tDanger">Danger</button>
+      <button class="d" data-demo="tInfo">Info</button>
+      <button class="d" data-demo="tPlain">No icon</button>
+      <button class="d" data-demo="tTitle">Title only (danger)</button>
+      <button class="d" data-demo="tBottom">Bottom centre + ×</button>
+      <button class="d" data-demo="tSticky">Sticky</button>
+    </div>
+  </section>
 
-<script src="lumen.js"></script>
+  <section class="card">
+    <h2>Toast positions</h2>
+    <p>Set with the <code>position</code> option.</p>
+    <div class="row">
+      <button class="d" data-pos="top-start">top-start</button>
+      <button class="d" data-pos="top">top</button>
+      <button class="d" data-pos="top-end">top-end</button>
+      <button class="d" data-pos="bottom-start">bottom-start</button>
+      <button class="d" data-pos="bottom">bottom</button>
+      <button class="d" data-pos="bottom-end">bottom-end</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Customising</h2>
+    <p>Themes and skins through <code>setDefaults</code> and <code>mixin</code>.</p>
+    <div class="row">
+      <button class="d" data-demo="theme">Toggle dark theme</button>
+      <button class="d" data-demo="brand">Custom skin (customClass)</button>
+    </div>
+  </section>
+
+  <section class="card wide">
+    <div class="head">
+      <h2>Result log</h2>
+      <button class="link" id="clear">Clear</button>
+    </div>
+    <pre id="log" aria-live="polite"></pre>
+  </section>
+</main>
+
+<script src="https://jhzrmx.github.io/lumen/lumen.js"></script>
+
 <script>
 (function () {
-  var dark = false;
-  var out = document.getElementById('out');
-  function show(r) { out.textContent = JSON.stringify(r, null, 2); }
-  function $(id) { return document.getElementById(id); }
-  function theme() { return dark ? 'dark' : 'light'; }
+  var logEl = document.getElementById('log');
+  var root = document.documentElement;
 
-  // One place to set defaults for everything on this page
-  Lumen.setDefaults({ theme: 'light' });
+  function log(label, r) {
+    var t = new Date().toLocaleTimeString();
+    logEl.textContent = t + '  ' + label + ' → ' + JSON.stringify(r) + '\n' + logEl.textContent;
+  }
+  function track(label, promise) {
+    promise.then(function (r) { log(label, r); });
+    return promise;
+  }
 
-  $('b-success').onclick  = function () { Lumen.success('Payment received', 'A receipt is on its way to your inbox.').then(show); };
-  $('b-error').onclick    = function () { Lumen.error('Upload failed', 'The file is larger than 10 MB. Choose a smaller one and try again.').then(show); };
-  $('b-warning').onclick  = function () { Lumen.warning('Unsaved changes', 'Leaving now will discard your edits.').then(show); };
-  $('b-danger').onclick   = function () { Lumen.danger('Delete account', 'Your data will be erased permanently.').then(show); };
-  $('b-info').onclick     = function () { Lumen.info('Maintenance tonight', 'The service will be read-only from 22:00 to 22:30 UTC.').then(show); };
-  $('b-question').onclick = function () { Lumen.question('Need a hand?', 'Our team replies within a few minutes.').then(show); };
+  // closest() with a fallback for older browsers
+  function closestButton(node) {
+    while (node && node.nodeType === 1) {
+      if (node.tagName === 'BUTTON') { return node; }
+      node = node.parentNode;
+    }
+    return null;
+  }
 
-  $('b-confirm').onclick = function () {
-    // confirm(title, text, icon, confirmButtonText | options)
-    Lumen.confirm('Delete this project?', 'All 14 files will be removed. This cannot be undone.', 'danger', 'Delete project').then(show);
-  };
-  $('b-three').onclick = function () {
-    Lumen.fire({
-      title: 'Save changes before closing?',
-      showDenyButton: true, showCancelButton: true,
-      confirmButtonText: 'Save', denyButtonText: "Don't save"
-    }).then(show);
-  };
-  $('b-footer').onclick = function () {
-    Lumen.fire({
-      icon: 'info', title: 'Invite sent',
-      text: 'Maya will get an email with a link that expires in 7 days.',
-      footer: '<a href="#" onclick="return false">Manage pending invites</a>'
-    }).then(show);
-  };
+  /* ---- theme: follow the OS until the toggle is used ---- */
+  var dark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  Lumen.setDefaults({ theme: 'auto' });
 
-  $('b-prompt').onclick = function () {
-    Lumen.prompt('Name your workspace', {
-      inputLabel: 'Workspace name', inputPlaceholder: 'e.g. Studio North',
-      inputAttributes: { maxlength: 24, autocomplete: 'off' },
-      confirmButtonText: 'Create workspace',
-      inputValidator: function (v) { if (!v || v.replace(/\s/g, '').length < 3) { return 'Use at least 3 characters.'; } }
-    }).then(show);
-  };
-  $('b-select').onclick = function () {
-    Lumen.fire({
-      title: 'Export format', input: 'select',
-      inputOptions: { csv: 'CSV (spreadsheet)', json: 'JSON', pdf: 'PDF report' },
-      inputPlaceholder: 'Choose a format', showCancelButton: true, confirmButtonText: 'Export',
-      inputValidator: function (v) { if (!v) { return 'Pick a format to continue.'; } }
-    }).then(show);
-  };
-  $('b-async').onclick = function () {
-    Lumen.fire({
-      icon: 'question', title: 'Publish now?', text: 'Your changes go live for everyone.',
-      showCancelButton: true, confirmButtonText: 'Publish',
-      preConfirm: function () {
-        // Return any thenable (a Promise, or a plain { then: fn } so it works without Promise support).
-        // Resolve with a value, return false to stay open, or fail to show the message in the dialog.
-        return {
-          then: function (ok, fail) {
-            setTimeout(function () {
-              if (Math.random() < 0.4) { fail(new Error('Server is busy. Try again.')); } else { ok({ published: true }); }
-            }, 1200);
-          }
-        };
-      }
-    }).then(function (r) { show(r); if (r.isConfirmed) { Lumen.toast.success('Published'); } });
-  };
-  $('b-queue').onclick = function () {
-    Lumen.queue([
-      { title: 'Step 1 of 3', input: 'text', inputLabel: 'Your name', confirmButtonText: 'Next', showCancelButton: true },
-      { title: 'Step 2 of 3', input: 'radio', inputOptions: { s: 'Small', m: 'Medium', l: 'Large' }, inputValue: 'm', confirmButtonText: 'Next', showCancelButton: true },
-      { title: 'Step 3 of 3', input: 'checkbox', inputLabel: 'Email me the summary', inputValue: 1, confirmButtonText: 'Finish' }
-    ]).then(show);
-  };
-
-  $('b-closebtn').onclick = function () {
-    // The × button is on by default for dialogs
-    Lumen.info('Easy to leave', 'Use the × button, click outside, or press Esc.').then(show);
-  };
-  $('b-noclose').onclick = function () {
-    Lumen.fire({ icon: 'info', title: 'No × button', text: 'You can still click outside or press Esc.', showCloseButton: false }).then(show);
-  };
-  $('b-nobackdrop').onclick = function () {
-    Lumen.fire({ icon: 'warning', title: 'Choose an option', text: 'Clicking the backdrop does nothing here.',
-      allowOutsideClick: false, showCancelButton: true }).then(show);
-  };
-  $('b-locked').onclick = function () {
-    Lumen.fire({ icon: 'warning', title: 'Action required', text: 'No ×, no backdrop click, no Esc. Only the button closes this.',
-      showCloseButton: false, allowOutsideClick: false, allowEscapeKey: false, confirmButtonText: 'I understand' }).then(show);
-  };
-  $('b-dynamic').onclick = function () {
-    var box = document.createElement('label');
-    box.style.cssText = 'display:block;margin-top:12px;cursor:pointer';
-    box.innerHTML = '<input type="checkbox" id="lock-box"> Lock this dialog';
-    Lumen.fire({
-      title: 'Decide at click time', text: 'Tick the box, then click outside.', html: box,
-      // allowOutsideClick (and allowEscapeKey) can be functions
-      allowOutsideClick: function () { return !document.getElementById('lock-box').checked; }
-    }).then(show);
-  };
-
-  $('b-toast').onclick  = function () { Lumen.toast.success('Saved', 'Draft synced just now.', { theme: theme() }).then(show); };
-  $('b-toast2').onclick = function () { Lumen.toast.info('New version available', { position: 'bottom', showCloseButton: true, timer: 5000, theme: theme() }); };
-  $('b-toast3').onclick = function () { Lumen.toast.danger('Connection lost'); };
-  $('b-timer').onclick  = function () { Lumen.fire({ icon: 'success', title: 'Message sent', timer: 3000, timerProgressBar: true, showConfirmButton: false }).then(show); };
-  $('b-loading').onclick = function () {
-    Lumen.loading('Syncing your files', 'This usually takes a few seconds.');
-    setTimeout(function () { Lumen.close(); Lumen.toast.success('All files synced', { theme: theme() }); }, 2000);
-  };
-
-  $('b-theme').onclick = function () {
+  function toggleTheme() {
     dark = !dark;
-    document.body.className = dark ? 'dark' : '';
-    Lumen.setDefaults({ theme: theme() });
-    Lumen.info('Theme: ' + theme(), 'New dialogs use this theme. Pass theme: "auto" to follow the system setting.');
-  };
+    var name = dark ? 'dark' : 'light';
+    root.setAttribute('data-theme', name);
+    Lumen.setDefaults({ theme: name });
+    return Lumen.info('Theme: ' + name, 'New dialogs use this theme. Pass theme: "auto" to follow the system setting.');
+  }
 
+  /* ---- custom skin ---- */
   var Brand = Lumen.mixin({
     radius: 0, backdrop: 'rgba(17,17,17,.35)',
     customClass: { popup: 'brand-popup', confirmButton: 'brand-btn', cancelButton: 'brand-btn' }
   });
-  $('b-brand').onclick = function () {
-    Brand.confirm('Print the zine?', 'Fifty copies, saddle-stitched.', { icon: null, confirmButtonColor: '#111', confirmButtonText: 'Print' }).then(show);
+
+  var demos = {
+    /* alerts */
+    success:  function () { return Lumen.success('Saved!', 'Your changes are live.'); },
+    error:    function () { return Lumen.error('Oops…', 'Something went wrong.'); },
+    warning:  function () { return Lumen.warning('Careful', 'Disk space is running low.'); },
+    danger:   function () { return Lumen.danger('Delete account?', 'All your data will be permanently removed.'); },
+    info:     function () { return Lumen.info('Heads up', 'A new version is available.'); },
+    question: function () { return Lumen.question('Need help?', 'Our team is online.'); },
+    plain:    function () { return Lumen.fire('Hello world', 'No icon, just a message.'); },
+
+    /* confirm & decisions */
+    confirm: function () { return Lumen.confirm('Delete this file?', 'This cannot be undone.', 'warning'); },
+    confirmDanger: function () {
+      // confirm(title, text, icon, confirmButtonText | options)
+      return Lumen.confirm('Delete this project?', 'All 14 files will be removed. This cannot be undone.', 'danger', 'Delete project');
+    },
+    confirmCustom: function () {
+      return Lumen.confirm({
+        title: 'Discard draft?', text: 'Your unsaved changes will be lost.', icon: 'warning',
+        confirmButtonText: 'Discard', cancelButtonText: 'Keep editing'
+      });
+    },
+    confirmFlow: function () {
+      return Lumen.confirm('Archive project?', 'You can restore it later.').then(function (r) {
+        if (r.isConfirmed) { Lumen.toast.success('Project archived'); }
+        else { Lumen.toast.info('Nothing changed'); }
+        return r;
+      });
+    },
+    three: function () {
+      return Lumen.fire({
+        title: 'Save changes before closing?',
+        showDenyButton: true, showCancelButton: true,
+        confirmButtonText: 'Save', denyButtonText: "Don't save"
+      });
+    },
+    footer: function () {
+      return Lumen.fire({
+        icon: 'info', title: 'Invite sent',
+        text: 'Maya will get an email with a link that expires in 7 days.',
+        footer: '<a href="#" onclick="return false">Manage pending invites</a>'
+      });
+    },
+
+    /* prompts & inputs */
+    prompt: function () { return Lumen.prompt('What is your name?', { inputPlaceholder: 'Ada Lovelace' }); },
+    promptLabel: function () {
+      return Lumen.prompt('Name your workspace', {
+        inputLabel: 'Workspace name', inputPlaceholder: 'e.g. Studio North',
+        inputAttributes: { maxlength: 24, autocomplete: 'off' },
+        confirmButtonText: 'Create workspace',
+        inputValidator: function (v) { if (!v || v.replace(/\s/g, '').length < 3) { return 'Use at least 3 characters.'; } }
+      });
+    },
+    email: function () {
+      return Lumen.prompt('Enter your email', {
+        input: 'email', inputPlaceholder: 'you@example.com',
+        inputValidator: function (v) {
+          if (!v) { return 'Email is required'; }
+          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { return 'That does not look like an email'; }
+        }
+      });
+    },
+    password: function () {
+      return Lumen.prompt('Password', {
+        input: 'password',
+        inputValidator: function (v) { return v.length < 6 && 'Use at least 6 characters'; }
+      });
+    },
+    select: function () {
+      return Lumen.fire({
+        title: 'Choose a plan', input: 'select', showCancelButton: true,
+        inputOptions: { free: 'Free', pro: 'Pro', team: 'Team' }, inputValue: 'pro'
+      });
+    },
+    selectPh: function () {
+      return Lumen.fire({
+        title: 'Export format', input: 'select',
+        inputOptions: { csv: 'CSV (spreadsheet)', json: 'JSON', pdf: 'PDF report' },
+        inputPlaceholder: 'Choose a format', showCancelButton: true, confirmButtonText: 'Export',
+        inputValidator: function (v) { if (!v) { return 'Pick a format to continue.'; } }
+      });
+    },
+    textarea: function () {
+      return Lumen.prompt('Leave feedback', { input: 'textarea', inputPlaceholder: 'Tell us more…', confirmButtonText: 'Send' });
+    },
+    chain: function () {
+      return Lumen.prompt('Name?').then(function (r1) {
+        if (!r1.isConfirmed) { return r1; }
+        return Lumen.prompt('Email?', { input: 'email' }).then(function (r2) {
+          if (r2.isConfirmed) { Lumen.success('Thanks, ' + r1.value + '!', 'We will write to ' + r2.value + '.'); }
+          return r2;
+        });
+      });
+    },
+    queue: function () {
+      return Lumen.queue([
+        { title: 'Step 1 of 3', input: 'text', inputLabel: 'Your name', confirmButtonText: 'Next', showCancelButton: true },
+        { title: 'Step 2 of 3', input: 'radio', inputOptions: { s: 'Small', m: 'Medium', l: 'Large' }, inputValue: 'm', confirmButtonText: 'Next', showCancelButton: true },
+        { title: 'Step 3 of 3', input: 'checkbox', inputLabel: 'Email me the summary', inputValue: 1, confirmButtonText: 'Finish' }
+      ]);
+    },
+
+    /* async */
+    async: function () {
+      return Lumen.fire({
+        icon: 'question', title: 'Publish now?', text: 'Your changes go live for everyone.',
+        showCancelButton: true, confirmButtonText: 'Publish',
+        preConfirm: function () {
+          // Return any thenable (a Promise, or a plain { then: fn } so it works without Promise support).
+          // Resolve with a value, return false to stay open, or fail to show the message in the dialog.
+          return {
+            then: function (ok, fail) {
+              setTimeout(function () {
+                if (Math.random() < 0.4) { fail(new Error('Server is busy. Try again.')); } else { ok({ published: true }); }
+              }, 1200);
+            }
+          };
+        }
+      }).then(function (r) {
+        if (r.isConfirmed) { Lumen.toast.success('Published'); }
+        return r;
+      });
+    },
+    loading: function () {
+      var p = Lumen.loading('Syncing your files', 'This usually takes a few seconds.');
+      setTimeout(function () { Lumen.close(); Lumen.toast.success('All files synced'); }, 2000);
+      return p;
+    },
+
+    /* dismissal */
+    closeBtn: function () {
+      // The × button is on by default for dialogs
+      return Lumen.info('Easy to leave', 'Use the × button, click outside, or press Esc.');
+    },
+    noClose: function () {
+      return Lumen.fire({ icon: 'info', title: 'No × button', text: 'You can still click outside or press Esc.', showCloseButton: false });
+    },
+    noBackdrop: function () {
+      return Lumen.fire({ icon: 'warning', title: 'Choose an option', text: 'Clicking the backdrop does nothing here.',
+        allowOutsideClick: false, showCancelButton: true });
+    },
+    locked: function () {
+      return Lumen.fire({ icon: 'warning', title: 'Action required', text: 'No ×, no backdrop click, no Esc. Only the button closes this.',
+        showCloseButton: false, allowOutsideClick: false, allowEscapeKey: false, confirmButtonText: 'I understand' });
+    },
+    dynamic: function () {
+      var box = document.createElement('label');
+      box.style.cssText = 'display:block;margin-top:12px;cursor:pointer';
+      box.innerHTML = '<input type="checkbox" id="lock-box"> Lock this dialog';
+      return Lumen.fire({
+        title: 'Decide at click time', text: 'Tick the box, then click outside.', html: box,
+        // allowOutsideClick (and allowEscapeKey) can be functions
+        allowOutsideClick: function () { return !document.getElementById('lock-box').checked; }
+      });
+    },
+
+    /* behaviour */
+    timer: function () { return Lumen.fire({ title: 'Auto-closing', text: 'This closes in 3 seconds.', icon: 'info', timer: 3000 }); },
+    timerBar: function () {
+      return Lumen.fire({ icon: 'success', title: 'Message sent', timer: 3000, timerProgressBar: true, showConfirmButton: false });
+    },
+    replace: function () {
+      setTimeout(function () { track('replacement', Lumen.info('Replaced!', 'A new dialog took over.')); }, 1500);
+      return Lumen.fire('First dialog', 'Wait for it…');
+    },
+    html: function () {
+      return Lumen.fire({
+        title: 'Terms', icon: 'question', showCancelButton: true, confirmButtonText: 'Agree',
+        html: 'I accept the <a href="#terms" onclick="return false">terms of service</a> and <strong>privacy policy</strong>.'
+      });
+    },
+    top: function () {
+      return Lumen.fire({ position: 'top', width: 520, title: 'Cookies', text: 'We use a single cookie to remember your language.',
+        confirmButtonText: 'Accept', showCancelButton: true, cancelButtonText: 'Decline', backdrop: false });
+    },
+
+    /* toasts */
+    tSuccess: function () { return Lumen.toast.success('Copied to clipboard'); },
+    tError:   function () { return Lumen.toast.error('Upload failed', 'Check your connection.'); },
+    tWarning: function () { return Lumen.toast.warning('Low battery', '10% remaining'); },
+    tDanger:  function () { return Lumen.toast.danger('Action blocked', 'Permission denied.'); },
+    tInfo:    function () { return Lumen.toast.info('Syncing…'); },
+    tPlain:   function () { return Lumen.toast('Just a message'); },
+    tTitle:   function () { return Lumen.toast.danger('Connection lost'); },
+    tBottom:  function () { return Lumen.toast.info('New version available', { position: 'bottom', showCloseButton: true, timer: 5000 }); },
+    tSticky:  function () { return Lumen.toast.info('Sticky toast', 'Stays until you click it.', { timer: 0 }); },
+
+    /* customising */
+    theme: function () { return toggleTheme(); },
+    brand: function () {
+      return Brand.confirm('Print the zine?', 'Fifty copies, saddle-stitched.', { icon: null, confirmButtonColor: '#111', confirmButtonText: 'Print' });
+    }
   };
-  $('b-top').onclick = function () {
-    Lumen.fire({ position: 'top', width: 520, title: 'Cookies', text: 'We use a single cookie to remember your language.', confirmButtonText: 'Accept', showCancelButton: true, cancelButtonText: 'Decline', backdrop: false }).then(show);
-  };
-}());
+
+  document.addEventListener('click', function (e) {
+    var b = closestButton(e.target);
+    if (!b) { return; }
+    if (b.getAttribute('data-demo')) {
+      var name = b.getAttribute('data-demo');
+      track(name, demos[name]());
+    } else if (b.getAttribute('data-pos')) {
+      var pos = b.getAttribute('data-pos');
+      track('toast ' + pos, Lumen.toast.info(pos, 'Toast position', { position: pos }));
+    } else if (b.id === 'clear') {
+      logEl.textContent = '';
+    }
+  });
+})();
 </script>
 </body>
 </html>
